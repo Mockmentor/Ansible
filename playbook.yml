@@ -1,0 +1,39 @@
+- hosts: webservers
+  remote_user: raynor
+  vars:
+    home: /home/raynor/mm
+    user: raynor
+    frontend_repo: Arcee
+  
+  tasks:
+    - name: Create mm folder
+      file:
+        path: '{{ home }}'
+        state: directory
+        owner: '{{ user }}'
+        group: '{{ user }}'
+        
+    - name: Clone Arcee (frontend)
+      git:
+        accept_newhostkey: true
+        repo: 'git@github.com:Mockmentor/Arcee.git'
+        dest: '{{ home }}/{{ frontend_repo }}'
+
+    - name: Install nodejs and npm
+      become: yes
+      apt:
+        pkg:
+        - nodejs
+        - npm
+        state: present
+
+    - name: Install npm modules
+      shell:
+        creates: node_modules
+        chdir: '{{ home }}/{{ frontend_repo }}'
+        cmd: npm i
+
+    - name: Run server
+      command:
+        chdir: '{{ home }}/{{ frontend_repo }}'
+        cmd: npm start >/dev/null 2>&1 &
